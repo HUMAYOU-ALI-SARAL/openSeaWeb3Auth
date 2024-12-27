@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -17,7 +18,7 @@ interface NFT {
 }
 
 const NFTDetails = () => {
-  const { web3Provider, login, getAccounts, getUserInfo } = useWeb3Auth();
+  const { web3Provider,getAccounts } = useWeb3Auth();
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
   const [collectionName, setCollectionName] = useState<string | null>(null);
@@ -80,8 +81,8 @@ const NFTDetails = () => {
         throw new Error("No Web3Auth provider found!");
       }
 
-      const newProvider = new ethers.BrowserProvider(web3Provider);
-      setProvider(newProvider);
+      const newProvider = new ethers.JsonRpcProvider(web3Provider as never);
+      setProvider(newProvider as never);
 
       const openseaSDK = new OpenSeaSDK(newProvider, {
         chain: Chain.Sepolia,
@@ -149,7 +150,7 @@ const NFTDetails = () => {
       alert("NFT purchase successful!");
       window.location.reload(); // Refresh the page
     } catch (error) {
-      console.error(error.message || "Failed to complete the purchase.");
+      console.error(error || "Failed to complete the purchase.");
       alert("Failed to purchase the NFT. Please try again.");
     }
   };

@@ -92,4 +92,5 @@ const signMessage = async (provider: IProvider): Promise<any> => {
   }
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default {getChainId, getAccounts, getBalance, sendTransaction, signMessage};

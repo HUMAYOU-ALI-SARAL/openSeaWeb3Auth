@@ -22,6 +22,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
+      console.log(accountAddress)
       try {
         await web3auth.init();
         setWeb3Provider(web3auth.provider);
@@ -36,6 +37,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (loginProvider: string) => {

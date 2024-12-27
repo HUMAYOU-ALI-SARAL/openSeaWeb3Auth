@@ -1,5 +1,5 @@
 // global.d.ts
 interface Window {
-    ethereum: any; // or use a more specific type if you prefer
+    ethereum: unknown; // or use a more specific type if you prefer
   }
   
