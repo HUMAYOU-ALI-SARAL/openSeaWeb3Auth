@@ -81,10 +81,10 @@ const NFTDetails = () => {
         throw new Error("No Web3Auth provider found!");
       }
 
-      const newProvider = new ethers.BrowserProvider(web3Provider as any);
+      const newProvider =new ethers.BrowserProvider(web3Provider as any);
       setProvider(newProvider as any);
 
-      const openseaSDK = new OpenSeaSDK(newProvider, {
+      const openseaSDK = new OpenSeaSDK(newProvider as any, {
         chain: Chain.Sepolia,
         apiKey: "6772ed3ee6c743c78b14305eedc0e9c9",
       });
