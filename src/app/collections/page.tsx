@@ -33,7 +33,7 @@ const NFTDisplay = () => {
 
       try {
         const res = await axios.get(
-          "https://testnets-api.opensea.io/api/v2/collections?chain=sepolia&creator_username=spheraworld&limit=10",
+          "https://testnets-api.opensea.io/api/v2/collections?chain=sepolia&creator_username=humayou&limit=10&collected=true",
           options
         );
         setNfts(res.data.collections || []);
@@ -75,14 +75,7 @@ const NFTDisplay = () => {
               />
               <h3 className="nft-name">{nft.name}</h3>
               <p className="nft-description">{nft.description}</p>
-              <a
-                href={`https://opensea.io/collection/${nft.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="nft-link"
-              >
-                View on OpenSea
-              </a>
+
             </div>
           </Link>
         ))}
