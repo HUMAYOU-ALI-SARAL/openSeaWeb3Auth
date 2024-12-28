@@ -52,8 +52,8 @@ const ListingPopup: React.FC<ListingPopupProps> = ({
       setIsProcessing(true);
       setError(null);
       // Convert price to Wei (multiply by 10^18)
-      const priceInWei = (Number(price) * 1e18).toString();
-      await onConfirm(priceInWei);
+    ;
+      await onConfirm(price);
     } catch (error) {
       console.error('Error during listing:', error);
       setError('Failed to list NFT. Please try again.');
