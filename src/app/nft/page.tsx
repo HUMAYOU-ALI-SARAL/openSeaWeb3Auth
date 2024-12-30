@@ -10,6 +10,10 @@ import Loader from "@/Component/Loader";
 import "./NFTDetails.css";
 import Popup from "@/Component/Popup";
 import ListingPopup from "@/Component/UpdateNft";
+import Navbar from '@/components/Navbar';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+
 
 // Define NFT interface
 interface NFT {
@@ -25,11 +29,13 @@ const NFTDetails = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
   const [collectionName, setCollectionName] = useState<string | null>(null);
-  const [prices, setPrices] = useState<Record<string, string | number>>({});
+  const [prices, setPrices] = useState<Record<string, string | number|null>>({});
   const [sdk, setSdk] = useState<OpenSeaSDK | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [accountAddress, setAccountAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ownedNfts,setOwnedNfts]=useState<Record<string,string|null>>({})
+  const [listLoading,setListLoading]=useState(false)
   const [popData, setPopupData] = useState({
     isOpen: false,
     name: "",
@@ -38,23 +44,43 @@ const NFTDetails = () => {
     price: "",
     selectedNft: null as NFT | null
   });
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get('token');
+
+    if (!token) {
+      router.push('/');
+    } else {
+      router.push('/nft');
+    }
+  }, [router]);
 
   const [listingPopupData, setListingPopupData] = useState({
     isOpen: false,
     name: "",
     tokenId: "",
     address: "",
-    selectedNft: null as NFT | null
+    selectedNft: null as NFT | null,
+    isOwner:false,
+    isListed:false
   });
-  const listPopupHandler = (nft: NFT) => {
+
+  const listPopupHandler = async(nft: NFT,isOwned:boolean,isListed:boolean) => {
+    setListLoading(true)
+    await fetchPrice(nft.identifier)
     setListingPopupData({
       isOpen: true,
       name: nft.name,
       tokenId: nft.identifier,
       address: nft.contract,
-      selectedNft: nft
+      selectedNft: nft,
+      isOwner:isOwned,
+      isListed:isListed
     });
+    setListLoading(false)
   };
+
   const handleListingConfirm = async (price: string) => {
     if (listingPopupData.selectedNft && accountAddress) {
       try {
@@ -65,15 +91,14 @@ const NFTDetails = () => {
           accountAddress
         );
         setListingPopupData(prev => ({ ...prev, isOpen: false }));
-        // Optionally refresh NFT data or show success message
         alert("NFT listed successfully!");
       } catch (error) {
         console.error('Error listing NFT:', error);
         throw error;
       }
     }
-  };  
-  // Fetch account info and set provider once Web3Auth is initialized
+  };
+
   useEffect(() => {
     const fetchAccountAddress = async () => {
       try {
@@ -113,6 +138,7 @@ const NFTDetails = () => {
           options
         );
         setNfts(res.data.nfts || []);
+        console.log("res.data.nfts", res.data.nfts);
       } catch (err) {
         console.error("Error fetching NFTs:", err);
         setError("Failed to fetch NFTs");
@@ -122,7 +148,37 @@ const NFTDetails = () => {
     };
 
     fetchNFTDetails();
+
   }, []);
+useEffect(()=>{
+  const fetchOwnedNftsDetails=async()=>{
+    await fetchOwnedNfts()
+
+  }
+  fetchOwnedNftsDetails()
+  console.log(ownedNfts,"these are")
+},[accountAddress])
+  // const [collections, setCollections] = useState<any[]>([]);
+
+  // useEffect(() => {
+  //   const fetchAllNfts = async () => {
+  //     const options = {
+  //       headers: {
+  //         accept: "application/json",
+  //         "x-api-key": "6772ed3ee6c743c78b14305eedc0e9c9",
+  //       },
+  //     };
+
+  //     try {
+  //       const response = await axios.get(`https://api.opensea.io/api/v2/collections`, options);
+  //       setCollections(response.data.collections || []);
+  //     } catch (error) {
+  //       console.error("Error fetching all NFTs:", error);
+  //     }
+  //   };
+
+  //   fetchAllNfts();
+  // }, []);
 
   const initializeProvider = async () => {
     try {
@@ -143,7 +199,41 @@ const NFTDetails = () => {
       setError("Failed to initialize provider");
     }
   };
-
+  useEffect(() => {
+    console.log(ownedNfts, "These are updated owned NFTs");
+  }, [ownedNfts]);
+  
+  const fetchOwnedNfts = async () => {
+    
+    const options = {
+      headers: {
+        accept: "application/json",
+        "x-api-key": "6772ed3ee6c743c78b14305eedc0e9c9",
+      },
+    };
+  
+    try {
+      const acc= localStorage.getItem("walletAddress")
+      const res = await axios.get(
+        `https://testnets-api.opensea.io/api/v2/chain/sepolia/account/${accountAddress?accountAddress:acc}/nfts`,
+        options
+      );
+      const nfts =res.data.nfts; // Adjust based on actual API response structure
+      console.log(nfts,"these are nfts")
+      nfts.forEach((nftItem: any) => {
+        console.log(nftItem.identifier,nftItem.contract)
+        setOwnedNfts((prevData) => ({
+          ...prevData,
+          [nftItem.identifier]: nftItem.contract,
+        }));
+      });
+        
+      console.log(ownedNfts, "These are owned NFTs");
+    } catch (err:any) {
+      console.error("Error fetching NFTs:", err.response || err.message);
+    }
+  };
+  
   const fetchPrice = async (nftIdentifier: string) => {
     const options = {
       headers: {
@@ -159,7 +249,7 @@ const NFTDetails = () => {
       );
 
       const rawPrice = res.data?.price?.current?.value;
-      const price = rawPrice ? rawPrice / 1e18 +"ETH" : "Not Listed!";
+      const price = rawPrice ? rawPrice / 1e18 + "ETH" : "Not Listed!";
 
       setPrices((prevPrices) => ({
         ...prevPrices,
@@ -169,9 +259,10 @@ const NFTDetails = () => {
       console.error("Error fetching price for NFT", nftIdentifier, ":", err);
       setPrices((prevPrices) => ({
         ...prevPrices,
-        [nftIdentifier]: "Error",
+        [nftIdentifier]:null,
       }));
     }
+
   };
 
   const listNFT = async (
@@ -195,17 +286,15 @@ const NFTDetails = () => {
         startAmount,
         listingTime,
       });
-
-      console.log('NFT Listed Successfully:', order);
+ 
       return order;
     } catch (error) {
-      console.error('Error listing NFT:', error);
       setError("Failed to list NFT");
       throw error;
     }
   };
 
-  const buyPopupHandler = async(nft: NFT) => {
+  const buyPopupHandler = async (nft: NFT) => {
     console.log(nft)
     console.log(prices[nft.identifier])
     await fetchPrice(nft.identifier)
@@ -214,7 +303,7 @@ const NFTDetails = () => {
       name: nft.name,
       tokenId: nft.identifier,
       address: nft.contract,
-      price: prices[nft.identifier]?.toString() || "N/A",
+      price: prices[nft.identifier]?.toString() || "Not Listed!",
       selectedNft: nft
     });
   };
@@ -251,10 +340,8 @@ const NFTDetails = () => {
         order,
         accountAddress,
       });
-
-      console.log('Purchase transaction:', transaction);
-      alert("NFT purchase successful!");
       window.location.reload();
+      console.log(transaction)
     } catch (error) {
       console.error('Purchase error:', error);
       throw new Error("Failed to complete the purchase");
@@ -265,44 +352,77 @@ const NFTDetails = () => {
 
   return (
     <>
+      <Navbar />
       <div style={{ padding: "30px" }}>
         {error && <div className="error-message">{error}</div>}
-        {accountAddress && <h2>Connected Account: {accountAddress}</h2>}
+        {/* {accountAddress && <h2>Connected Account: {accountAddress}</h2>} */}
         {popData.isOpen && (
           <Popup
             address={popData.address}
             name={popData.name}
             tokenId={popData.tokenId}
-            price={popData.price?popData.price:"Not Listed"}
+            price={popData.price ? popData.price : "Not Listed"}
             onConfirm={handleConfirm}
             onCancel={() => setPopupData(prev => ({ ...prev, isOpen: false }))}
           />
         )}
-          {listingPopupData.isOpen && (
-        <ListingPopup
-          address={listingPopupData.address}
-          name={listingPopupData.name}
-          tokenId={listingPopupData.tokenId}
-          onConfirm={handleListingConfirm}
-          onCancel={() => setListingPopupData(prev => ({ ...prev, isOpen: false }))}
-        />
-      )}
+        {listingPopupData.isOpen && (
+          !listLoading&&<ListingPopup
+            address={listingPopupData.address}
+            name={listingPopupData.name}
+            tokenId={listingPopupData.tokenId}
+            onConfirm={handleListingConfirm}
+            onCancel={() => setListingPopupData(prev => ({ ...prev, isOpen: false }))}
+            isOwner={listingPopupData.isOwner}
+            isListed={listingPopupData.isListed}
+          />
+        )}
       </div>
       <div className="nft-container">
-        {nfts.map((nft) => (
-          <div className="nft-item" key={nft.identifier}>
-            <h2>{nft.name}</h2>
-            <img src={nft.image_url} alt={nft.name} className="nft-image" />
-            <p>{nft.description}</p>
-            <div className="nft-actions">
-              <button onClick={() => buyPopupHandler(nft)}>Buy on OpenSea</button>
-              <button onClick={() => listPopupHandler(nft)}>
-                List on OpenSea
-              </button>
-            </div>
-          </div>
-        ))}
+      {nfts.map((nft) => {
+  const isOwned = ownedNfts[nft.identifier] === nft.contract; // Check if the NFT is owned by the user
+  const isListed = prices[nft.identifier] !== undefined;     // Check if the NFT is already listed
+
+  return (
+    <div className="nft-item" key={nft.identifier}>
+      <h2>{nft.name}</h2>
+      <img src={nft.image_url} alt={nft.name} className="nft-image" />
+      <p>{nft.description}</p>
+      <div className="nft-actions">
+        {/* Buy Button */}
+        <button
+          onClick={() => buyPopupHandler(nft)}
+          disabled={isOwned}
+          className={`btn ${isOwned ? "btn-disabled" : "btn-active"}`}
+        >
+          {isOwned ? "Owned" : "Buy on OpenSea"}
+        </button>
+
+        {/* List Button */}
+        <button
+          onClick={() =>!listLoading&&listPopupHandler(nft,isOwned,isListed)}
+          className={"btn btn-active"}
+        >
+          {loading?"loading....":"List on OpenSea"}
+        </button>
       </div>
+    </div>
+  );
+})}
+
+      </div>
+      {/* <div className="collection-container"> */}
+        {/* {collections */}
+          {/* .filter((collection: any) => collection.image_url) */}
+          {/* .map((collection: any) => ( */}
+            {/* <div className="collection-card" key={collection.collection}> */}
+              {/* <img src={collection.image_url} alt={collection.name} className="collection-image object-cover" /> */}
+              {/* <h3>{collection.name}</h3> */}
+              {/* <p className="font-[8px]">{collection.description}</p> */}
+              {/* <a href={collection.opensea_url} target="_blank" rel="noopener noreferrer">View on OpenSea</a> */}
+            {/* </div> */}
+          {/* ))} */}
+      {/* </div> */}
     </>
   );
 };

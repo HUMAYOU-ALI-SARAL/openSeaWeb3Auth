@@ -1,34 +1,36 @@
+// src/app/page.tsx
 'use client';
-
+import React, { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/contexts/web3AuthContext';
-import { useEffect, useState } from 'react';
 import styles from './page.module.css';
 import Loader from '@/Component/Loader';
-import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Home() {
   const { login, logout, loggedIn, getUserInfo, getAccounts } = useWeb3Auth();
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
 
   useEffect(() => {
-    if (loggedIn) {
-      const fetchUserData = async () => {
-        setLoading(true);
-        try {
-          const userInfo = await getUserInfo();
-          console.log('User info:', userInfo);
-          await getAccounts();
-          router.push('/collections'); // Redirect to /collections
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchUserData();
+    const token = Cookies.get('token');
+
+    if (!token) {
+      router.push('/');
+    } else {
+      router.push('/collections');
     }
-  }, [loggedIn, getUserInfo, getAccounts, router]);
+  }, [router]);
+
+  const handleLogin = async (provider: string) => {
+    setLoading(true);
+    try {
+      await login(provider);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return <Loader />;
@@ -36,26 +38,18 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      {!loggedIn ? (
-        <button
-          onClick={() => {
-            setLoading(true);
-            login('google').finally(() => setLoading(false));
-          }}
-          className={`${styles.button} ${styles.loginButton}`}
-        >
-          Login with Google
-        </button>
-      ) : (
-        <button
-          onClick={() => {
-            logout();
-          }}
-          className={`${styles.button} ${styles.logoutButton}`}
-        >
-          Logout
-        </button>
-      )}
+      <button
+        onClick={() => handleLogin('google')}
+        className={`${styles.button} ${styles.loginButton}`}
+      >
+        Login with Google
+      </button>
+      <button
+        onClick={() => handleLogin('twitter')}
+        className={`${styles.button} ${styles.loginButton}`}
+      >
+        Login with Twitter
+      </button>
     </div>
   );
 }

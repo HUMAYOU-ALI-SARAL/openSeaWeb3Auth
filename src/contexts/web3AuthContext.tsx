@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { IProvider, WALLET_ADAPTERS } from "@web3auth/base";
 import { web3auth } from "@/utils/chainConfig";
 import RPC from "@/Libs/Web3Auth/ethersRPC";
+import Cookies from 'js-cookie';
+
 
 interface Web3AuthContextType {
   web3Provider: IProvider | null;
@@ -18,7 +20,7 @@ const Web3AuthContext = createContext<Web3AuthContextType | null>(null);
 export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
   const [web3Provider, setWeb3Provider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [accountAddress, setAccountAddress] = useState<string | null>(null); // New state for account address
+  const [accountAddress, setAccountAddress] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -38,7 +40,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [accountAddress]);
 
   const login = async (loginProvider: string) => {
     try {
@@ -48,14 +50,16 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
       setWeb3Provider(web3authProvider);
       if (web3auth.connected) {
         setLoggedIn(true);
-        await fetchAccount(); // Fetch account on login
+        await fetchAccount();
       }
       const userInfo = await getUserInfo();
-      console.log("User information:", userInfo);
+      console.log(userInfo,"this is useinfo")
+  
     } catch (error) {
       console.error("Login failed:", error);
     }
   };
+  
 
   const fetchAccount = async () => {
     try {
@@ -81,12 +85,16 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
       await web3auth.logout();
       setWeb3Provider(null);
       setLoggedIn(false);
-      setAccountAddress(null); // Clear account address on logout
+      setAccountAddress(null); 
+      Cookies.remove('token'); 
       localStorage.setItem("walletAddress", "");
+  
+      window.location.reload();
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
+  
 
   const getAccounts = async (): Promise<string | null> => {
     if (!web3Provider) {

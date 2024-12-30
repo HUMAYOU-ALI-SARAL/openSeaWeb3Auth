@@ -33,7 +33,7 @@ const NFTDisplay = () => {
 
       try {
         const res = await axios.get(
-          "https://testnets-api.opensea.io/api/v2/collections?chain=sepolia&creator_username=spheraworld&limit=10&collected=true",
+          "https://testnets-api.opensea.io/api/v2/collections?chain=sepolia&creator_username=spheraworld&limit=10",
           options
         );
         setNfts(res.data.collections || []);

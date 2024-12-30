@@ -2,6 +2,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
+  gap: 20px;
   height: 100vh;
   background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
   font-family: 'Arial', sans-serif;
