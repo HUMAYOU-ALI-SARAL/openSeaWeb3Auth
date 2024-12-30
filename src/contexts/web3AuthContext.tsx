@@ -39,7 +39,7 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     init();
-  }, [accountAddress]);
+  }, []);
 
   const login = async (loginProvider: string) => {
     try {
@@ -52,8 +52,16 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchAccount();
       }
       const userInfo = await getUserInfo();
-      console.log(userInfo,"this is useinfo")
+      const token = userInfo?.idToken || '';
+      if (token) {
+        Cookies.set('token', token, { 
+          expires: 1,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict', 
+        });
+      }
   
+      window.location.reload();
     } catch (error) {
       console.error("Login failed:", error);
     }
