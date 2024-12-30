@@ -6,10 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/contexts/web3AuthContext';
 import styles from './page.module.css';
 import Loader from '@/Component/Loader';
-import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Home() {
-  const { login, logout, loggedIn, getUserInfo, getAccounts } = useWeb3Auth();
+  const { login } = useWeb3Auth();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 

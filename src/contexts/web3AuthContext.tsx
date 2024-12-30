@@ -39,7 +39,6 @@ export function Web3AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountAddress]);
 
   const login = async (loginProvider: string) => {
