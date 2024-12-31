@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 import { useEffect, useState } from 'react';
 import './nft.css'
@@ -52,8 +53,8 @@ const TokensList = () => {
         );
         const data = await res.json();
         setTokens(data.tokens);
-      } catch (err) {
-        setError('Error fetching tokens.');
+      } catch (err:any) {
+        setError(err);
       } finally {
         setLoading(false);
       }
