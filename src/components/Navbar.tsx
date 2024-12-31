@@ -42,6 +42,12 @@ const Navbar: React.FC = () => {
                 <Link href="/collections" style={brandStyle}>
                     Logo
                 </Link>
+                <Link href="/collections" style={brandStyle}>
+                    Opensea
+                </Link>
+                <Link href="/magic-eden" style={brandStyle}>
+                    Magic Eden
+                </Link>
                 <div style={userSectionStyle}>
                     <span style={addressStyle}>
                         Connected Account: {userAddress ? userAddress : 'Loading...'}
